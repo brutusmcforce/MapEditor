@@ -57,26 +57,41 @@ namespace NoxShared
 		static NoxDb()
 		{
 			NoxPath = Settings.Default.NoxInstallDir;
+			// NOX_DATA is also used by OpenNox to point at the game data
+			string envPath = Environment.GetEnvironmentVariable("NOX_DATA");
+			if (!string.IsNullOrEmpty(envPath))
+				NoxPath = envPath;
+			// a valid NOX_DATA is used for this run only, not saved to the settings
+			bool fromEnv = !string.IsNullOrEmpty(envPath) && CheckThingDb();
 			// Check for Nox installation path
 			if (!CheckThingDb())
 			{
 				// Try to use path from registry, request user if failed
-				installPathKey = Registry.LocalMachine.OpenSubKey(REGISTRY_PATH);
-			
+				try
+				{
+					installPathKey = Registry.LocalMachine.OpenSubKey(REGISTRY_PATH);
+				}
+				catch (Exception)
+				{
+					// no registry access (Mono on Linux)
+					installPathKey = null;
+				}
+
 				if (installPathKey == null) FindNoxPath();
 				else
 				{
 					object val = installPathKey.GetValue("InstallPath");
 					if (val == null) FindNoxPath();
-            		else NoxPath = (string) val;
-                    
+					else NoxPath = (string) val;
 				}
-              
-            	// Get directory part if it's a path to file
-            	if (Path.HasExtension(NoxPath))
+
+				// Get directory part if it's a path to file
+				if (Path.HasExtension(NoxPath))
 					NoxPath = Path.GetDirectoryName(NoxPath);
-            	
-            	if (!NoxPath.EndsWith(directorySeparator, StringComparison.InvariantCultureIgnoreCase)) NoxPath += directorySeparator;
+			}
+			if (!NoxPath.EndsWith(directorySeparator, StringComparison.InvariantCultureIgnoreCase)) NoxPath += directorySeparator;
+			if (!fromEnv && NoxPath != Settings.Default.NoxInstallDir)
+			{
 				// Save path for later
 				Settings.Default.NoxInstallDir = NoxPath;
 				Settings.Default.Save();

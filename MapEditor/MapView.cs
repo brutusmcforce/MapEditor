@@ -182,7 +182,13 @@ namespace MapEditor
         {
             public FlickerFreePanel()
                 : base()
-            { SetStyle(ControlStyles.OptimizedDoubleBuffer | ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint | ControlStyles.Opaque, true); }
+            {
+                SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint | ControlStyles.Opaque, true);
+                // Mono allocates the double buffer for the whole control (the full map, 5888x5888) on every paint,
+                // which stalls the X server; Windows only buffers the invalidated area
+                if (Type.GetType("Mono.Runtime") == null)
+                    SetStyle(ControlStyles.OptimizedDoubleBuffer, true);
+            }
             // set styles to reduce flicker and painting over twice
         }
 
@@ -2217,8 +2223,8 @@ namespace MapEditor
                     Y = 0;
                 if (X < 0)
                     X = 0;
-                scrollPanel.VerticalScroll.Value = Y;
-                scrollPanel.HorizontalScroll.Value = X;
+                // setting the scroll bar values directly does not move the panel on Mono
+                scrollPanel.AutoScrollPosition = new Point(X, Y);
                 winX = centerAt.X - WidthMod;
                 winY = centerAt.Y;
                 scrollPanel.PerformLayout();

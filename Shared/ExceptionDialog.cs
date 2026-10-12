@@ -29,6 +29,7 @@ namespace NoxShared
 		public ExceptionDialog(Exception ex, string sourceReason)
 		{
 			InitializeComponent();
+			Console.Error.WriteLine("EXCEPTION (" + sourceReason + "): " + ex);
 
 			//fill the text box
 			ArrayList text = new ArrayList();

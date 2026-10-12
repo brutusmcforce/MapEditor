@@ -660,7 +660,7 @@
     <Folder Include="WizardForm\obj\Debug\TempPE\" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSHARP.Targets" />
-  <PropertyGroup>
+  <PropertyGroup Condition=" '$(OS)' == 'Windows_NT' ">
     <PostBuildEvent>if exist "$(TargetPath)0" move "$(TargetPath)0" "$(TargetPath)1"
 xcopy "$(ProjectDir)bundled\*" "$(ProjectDir)$(OutDir)" /E /Y
 </PostBuildEvent>
@@ -685,4 +685,11 @@ xcopy "$(ProjectDir)bundled\*" "$(ProjectDir)$(OutDir)" /E /Y
     <PreBuildEvent>
     </PreBuildEvent>
   </PropertyGroup>
+  <!-- the post-build event above uses cmd.exe; Mono/xbuild on other systems copies the bundled files here -->
+  <Target Name="CopyBundledFiles" AfterTargets="Build" Condition=" '$(OS)' != 'Windows_NT' ">
+    <ItemGroup>
+      <BundledFiles Include="$(ProjectDir)bundled\**\*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(BundledFiles)" DestinationFiles="@(BundledFiles->'$(OutDir)%(RecursiveDir)%(Filename)%(Extension)')" />
+  </Target>
 </Project>
